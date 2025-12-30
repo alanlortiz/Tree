@@ -8,9 +8,7 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* Evita scrollbars */
     font-family: 'Playfair Display', serif;
-    /* Previene selección de texto accidental en móviles */
     user-select: none;
     -webkit-user-select: none;
 }
@@ -19,69 +17,75 @@ canvas {
     display: block;
 }
 
+/* === CONFIGURACIÓN ESTILO PC (SIEMPRE ACTIVA EN HORIZONTAL) === */
 #message-container {
     position: absolute;
+    top: 50%;
+    left: 25%;
+    /* SIEMPRE A LA IZQUIERDA */
+    transform: translate(-50%, -50%);
+    text-align: left;
+    width: 45%;
+    /* Un poco más ancho para que quepa en móviles horizontales */
+    color: #5d4037;
     z-index: 10;
     opacity: 0;
-    color: #5d4037;
-    /* Transición suave para cuando aparezca */
     transition: opacity 1s ease-in-out;
 }
 
-/* === ESTILO PARA PC (Pantallas grandes) === */
-@media (min-width: 769px) {
-    #message-container {
-        top: 50%;
-        left: 25%;
-        transform: translate(-50%, -50%);
-        text-align: left;
-        width: 40%;
-    }
-
-    #poem {
-        font-size: 1.5vw;
-        line-height: 1.6;
-        margin-bottom: 30px;
-    }
-
-    #timer {
-        font-size: 1.8vw;
-        font-weight: bold;
-        color: #c62828;
-    }
+/* Tipografía responsiva usando 'vmin' para que se adapte al tamaño de pantalla */
+#poem {
+    font-size: 3.5vmin;
+    /* Escala con la pantalla */
+    line-height: 1.5;
+    margin-bottom: 5vmin;
+    font-style: italic;
 }
 
-/* === ESTILO PARA CELULARES (Pantallas pequeñas) === */
-@media (max-width: 768px) {
+#timer-label {
+    font-size: 2.5vmin;
+    opacity: 0.8;
+}
+
+#timer {
+    font-size: 4vmin;
+    font-weight: bold;
+    color: #c62828;
+}
+
+/* === PANTALLA DE BLOQUEO (SOLO APARECE EN VERTICAL) === */
+#rotate-warning {
+    display: none;
+    /* Oculto por defecto */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f6e7d8;
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #5d4037;
+}
+
+.icon {
+    font-size: 50px;
+    margin-bottom: 20px;
+}
+
+/* Si la pantalla es VERTICAL (Retrato), activamos el bloqueo */
+@media screen and (orientation: portrait) {
+    #rotate-warning {
+        display: flex;
+    }
+
+    #canvas,
     #message-container {
-        top: 15%;
-        /* Texto arriba para no tapar el tronco */
-        left: 50%;
-        transform: translate(-50%, 0);
-        text-align: center;
-        width: 90%;
-        /* Fondo semitransparente opcional para legibilidad */
-        text-shadow: 0px 0px 5px rgba(246, 231, 216, 0.8);
+        display: none;
     }
 
-    #poem {
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-    }
-
-    #timer-label {
-        font-size: 0.9rem;
-    }
-
-    #timer {
-        font-size: 1.3rem;
-        font-weight: bold;
-        color: #c62828;
-    }
-
-    /* Ajuste para pantallas muy pequeñas */
-    #timer span {
-        display: inline-block;
-        margin: 0 3px;
-    }
+    /* Ocultamos el juego */
 }
