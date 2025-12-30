@@ -14,32 +14,39 @@ let targetOffset = 0;
    SETUP (HD & TAMAÑO)
 ========================= */
 function setupCanvas() {
-    // Detectar si hay rotación para recalcular tamaños
+    // 1. Detectar pixel ratio
     const dpr = window.devicePixelRatio || 1;
 
+    // 2. Ajustar tamaño real
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
-    ctx.scale(dpr, dpr);
 
+    // 3. Ajustar tamaño CSS
     canvas.style.width = window.innerWidth + "px";
     canvas.style.height = window.innerHeight + "px";
 
-    // Configuración SIEMPRE como PC (Horizontal)
+    // 4. IMPORTANTE: Resetear transformaciones antes de escalar
+    // Esto evita que el zoom se acumule al girar la pantalla
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    // 5. Configuración posiciones
     groundY = window.innerHeight * 0.88;
     centerX = window.innerWidth / 2;
-
-    // El árbol siempre se mueve el 25% del ancho a la derecha
     targetOffset = window.innerWidth * 0.25;
 }
 
+// Escuchar cambios de tamaño (giros de pantalla)
 window.addEventListener("resize", () => {
     setupCanvas();
-    // Si redimensionan, reiniciamos posición del corazón para que no se pierda
+    // Si estamos en espera, recentrar el corazón
     if (state === "idle") {
         heart.x = centerX;
         heart.y = window.innerHeight / 2 - 100;
     }
 });
+
+// Llamada inicial
 setupCanvas();
 
 /* =========================
@@ -87,7 +94,6 @@ class Leaf {
         this.t = 0;
         this.delay = Math.random() * 50;
 
-        // Vuelo
         this.isFlying = false;
         this.vx = -2 - Math.random() * 3;
         this.vy = (Math.random() - 0.5) * 2;
@@ -133,7 +139,6 @@ class Leaf {
 function spawnLeaves() {
     if (branchTips.length === 0) return;
     const cx = centerX;
-    // La altura relativa siempre es la misma porque asumimos horizontal
     const cy = groundY - window.innerHeight * 0.58;
     const baseScale = window.innerHeight * 0.025;
 
@@ -198,6 +203,9 @@ function drawTreeStep(x, y, len, ang, w, gen, p) {
 }
 
 function updateTimer() {
+    // Si el contenedor está oculto (vertical), no perdemos tiempo calculando
+    if (document.getElementById("message-container").style.display === "none") return;
+
     const diff = new Date() - startDate;
     document.getElementById("days").innerText = Math.floor(diff / (1000 * 60 * 60 * 24));
     document.getElementById("hours").innerText = Math.floor((diff / (1000 * 60 * 60)) % 24);
@@ -211,7 +219,7 @@ function updateTimer() {
 function animate() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-    // SUELO
+    // DIBUJAR SUELO
     if (state !== "idle" && state !== "falling") {
         ctx.beginPath();
         ctx.moveTo(0, groundY);
@@ -220,22 +228,25 @@ function animate() {
         ctx.stroke();
     }
 
-    // MOVIMIENTO LATERAL
+    // CONTROL DE CÁMARA (PANEO)
     let currentShift = 0;
     if (state === "blooming" || state === "windy") {
         if (moveProgress < 1) moveProgress += 0.005;
         const ease = moveProgress < 0.5 ? 4 * Math.pow(moveProgress, 3) : 1 - Math.pow(-2 * moveProgress + 2, 3) / 2;
         currentShift = targetOffset * ease;
-        document.getElementById("message-container").style.opacity = ease;
+        const msgContainer = document.getElementById("message-container");
+        if (msgContainer) msgContainer.style.opacity = ease;
     }
 
     ctx.save();
     ctx.translate(currentShift, 0);
 
+    // LÓGICA DE ESTADOS
     if (state === "idle") {
         drawHeart(heart.x, heart.y, heart.size);
         ctx.fillStyle = "#8b3a3a";
         ctx.font = "italic 18px Georgia";
+        ctx.textAlign = "left"; // Asegurar alineación
         ctx.fillText("Click aquí", heart.x + 30, heart.y);
     }
     else if (state === "falling") {
@@ -249,7 +260,7 @@ function animate() {
         }
     }
     else {
-        // Árbol consistente (sin ajustes raros para móvil)
+        // ÁRBOL
         const treeHeight = window.innerHeight * 0.25;
         const trunkWidth = window.innerHeight * 0.055;
 
@@ -280,11 +291,16 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// EVENTOS
-function startGame() { if (state === "idle") state = "falling"; }
+// EVENTOS DE INTERACCIÓN
+function startGame() { 
+    if (state === "idle") state = "falling"; 
+}
+
 canvas.addEventListener("click", startGame);
 canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
+    // preventDefault solo si es necesario, a veces bloquea el scroll en móviles
+    // Si la pantalla es fullscreen, está bien.
+    if(e.cancelable) e.preventDefault(); 
     startGame();
 }, { passive: false });
 
