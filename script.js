@@ -4,51 +4,43 @@ const ctx = canvas.getContext("2d");
 const startDate = new Date(2023, 0, 15, 12, 0, 0);
 
 /* =========================
-   VARIABLES RESPONSIVAS
+   VARIABLES GLOBALES
 ========================= */
-let isMobile = false;
 let centerX = 0;
 let groundY = 0;
-let targetOffset = 0; // Cuánto se moverá el árbol
+let targetOffset = 0;
 
 /* =========================
-   CONFIGURACIÓN DE PANTALLA (RESPONSIVE + HD)
+   SETUP (HD & TAMAÑO)
 ========================= */
 function setupCanvas() {
-    // Detectar pixel ratio para que se vea nítido en celulares
+    // Detectar si hay rotación para recalcular tamaños
     const dpr = window.devicePixelRatio || 1;
 
-    // Tamaño lógico
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
-
-    // Escalar contexto para que las medidas sigan siendo lógicas
     ctx.scale(dpr, dpr);
 
-    // Ajustar estilo CSS para que ocupe la pantalla
     canvas.style.width = window.innerWidth + "px";
     canvas.style.height = window.innerHeight + "px";
 
-    // Detectar si es móvil (ancho menor a 768px)
-    isMobile = window.innerWidth < 768;
+    // Configuración SIEMPRE como PC (Horizontal)
+    groundY = window.innerHeight * 0.88;
+    centerX = window.innerWidth / 2;
 
-    // Configuración de posiciones
-    groundY = window.innerHeight * 0.88; // Suelo al 88% de la altura lógica
-    centerX = window.innerWidth / 2;     // Centro lógico
-
-    // LÓGICA DE MOVIMIENTO:
-    // PC: Se mueve a la derecha (25% del ancho)
-    // MÓVIL: No se mueve (0), se queda centrado
-    targetOffset = isMobile ? 0 : window.innerWidth * 0.25;
+    // El árbol siempre se mueve el 25% del ancho a la derecha
+    targetOffset = window.innerWidth * 0.25;
 }
 
 window.addEventListener("resize", () => {
     setupCanvas();
-    // Reiniciar posiciones si se redimensiona drásticamente
-    heart.x = centerX;
-    heart.y = window.innerHeight / 2 - 100;
+    // Si redimensionan, reiniciamos posición del corazón para que no se pierda
+    if (state === "idle") {
+        heart.x = centerX;
+        heart.y = window.innerHeight / 2 - 100;
+    }
 });
-setupCanvas(); // Iniciar
+setupCanvas();
 
 /* =========================
    CONFIGURACIÓN JUEGO
@@ -64,7 +56,7 @@ const TIME_TO_WIND = 600;
 
 let heart = {
     x: centerX,
-    y: window.innerHeight / 2 - 100, // Posición inicial
+    y: window.innerHeight / 2 - 100,
     size: 20,
     vy: 0
 };
@@ -89,8 +81,7 @@ class Leaf {
         this.sx = sx; this.sy = sy;
         this.x = sx; this.y = sy;
         this.tx = tx; this.ty = ty;
-        // Hojas un poco más grandes en móvil para que se vean bien
-        this.size = (Math.random() * 2 + 2.5) * (isMobile ? 1.5 : 1);
+        this.size = Math.random() * 2 + 2.5;
         this.color = leafColors[Math.floor(Math.random() * leafColors.length)];
         this.alpha = 0;
         this.t = 0;
@@ -142,7 +133,8 @@ class Leaf {
 function spawnLeaves() {
     if (branchTips.length === 0) return;
     const cx = centerX;
-    const cy = groundY - window.innerHeight * (isMobile ? 0.45 : 0.58); // Altura copa ajustada
+    // La altura relativa siempre es la misma porque asumimos horizontal
+    const cy = groundY - window.innerHeight * 0.58;
     const baseScale = window.innerHeight * 0.025;
 
     for (let i = 0; i < 100; i++) {
@@ -166,7 +158,7 @@ function spawnLeaves() {
 
 function spawnFlyingLeaf() {
     const cx = centerX;
-    const cy = groundY - window.innerHeight * (isMobile ? 0.45 : 0.58);
+    const cy = groundY - window.innerHeight * 0.58;
     const baseScale = window.innerHeight * 0.025;
     const a = Math.random() * Math.PI * 2;
     let x = 16 * Math.pow(Math.sin(a), 3);
@@ -217,19 +209,18 @@ function updateTimer() {
    ANIMACIÓN PRINCIPAL
 ========================= */
 function animate() {
-    // Usamos window.innerWidth/Height para limpiar porque el canvas tiene escalado
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     // SUELO
     if (state !== "idle" && state !== "falling") {
         ctx.beginPath();
         ctx.moveTo(0, groundY);
-        ctx.lineTo(window.innerWidth, groundY); // Ancho completo lógico
+        ctx.lineTo(window.innerWidth, groundY);
         ctx.strokeStyle = "#8d6e63";
         ctx.stroke();
     }
 
-    // MOVIMIENTO LATERAL (Solo afecta si targetOffset > 0, es decir, en PC)
+    // MOVIMIENTO LATERAL
     let currentShift = 0;
     if (state === "blooming" || state === "windy") {
         if (moveProgress < 1) moveProgress += 0.005;
@@ -258,7 +249,7 @@ function animate() {
         }
     }
     else {
-        // Altura y grosor del árbol relativos a la pantalla
+        // Árbol consistente (sin ajustes raros para móvil)
         const treeHeight = window.innerHeight * 0.25;
         const trunkWidth = window.innerHeight * 0.055;
 
@@ -289,11 +280,11 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// EVENTOS: Soportar Click y Touch (Toque en pantalla)
+// EVENTOS
 function startGame() { if (state === "idle") state = "falling"; }
 canvas.addEventListener("click", startGame);
 canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault(); // Evitar zoom o scroll
+    e.preventDefault();
     startGame();
 }, { passive: false });
 
