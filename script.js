@@ -1,7 +1,7 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const startDate = new Date(2023, 0, 15, 12, 0, 0);
+const startDate = new Date(2025, 5, 3, 12, 0, 0);
 
 /* =========================
    VARIABLES GLOBALES
@@ -305,3 +305,4 @@ canvas.addEventListener("touchstart", (e) => {
 }, { passive: false });
 
 animate();
+
